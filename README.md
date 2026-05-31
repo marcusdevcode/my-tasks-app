@@ -1,4 +1,11 @@
-# React + TypeScript + Vite
+# My tasks app
+
+This app develope with two key elements
+1. Track changes
+2. Be able to export reports to csv file by selected range of dates
+
+
+## React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
