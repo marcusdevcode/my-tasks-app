@@ -65,7 +65,8 @@ export default function App() {
 
     useEffect(() => { loadData(); }, []);
 
-    const filteredTasks = tasks.filter(t => activeProject === 'all' || t.project_id === activeProject);
+    const [slug, setSlug] = useState<string>("all");
+    const filteredTasks = tasks.filter(t => activeProject === 'all' || t.project_id === activeProject).filter(t => slug === 'all' ? true : t.status === slug);
 
     const handleDelete = async (id: number) => {
         if (confirm('Are you sure you want to delete this task?')) {
@@ -92,6 +93,9 @@ export default function App() {
         setOpen(true);
     };
 
+    const handleStatClick = async (slug: string) => {
+        setSlug(slug);
+    }
     const handleToggleStatus = async (rowData: any) => {
         const isCompleting = rowData.status !== 'completed';
         const updatedTask = {
@@ -139,7 +143,7 @@ export default function App() {
 
     const exportToCSV = () => {
         const [startDate, endDate] = range;
-        const filtered = filteredTasks.filter(t => {
+        const filtered = tasks.filter(t => activeProject === 'all' || t.project_id === activeProject).filter(t => {
             if (t.status !== 'completed' || !t.completed_at) return false;
             try {
                 const completedDate = parseISO(t.completed_at);
@@ -154,9 +158,9 @@ export default function App() {
             return;
         }
 
-        const headers = "Task Name,Status,Date Completed\n";
+        const headers = "Task Name,Project Name,Status,Date Completed\n";
         const rows = filtered
-            .map(t => `"${t.title}","${t.status}","${t.completed_at}"`)
+            .map(t => `"${t.title}","${projects.find(p => p.id === t.project_id)?.name || 'Unknown'}","${t.status}","${t.completed_at}"`)
             .join("\n");
 
         const blob = new Blob([headers + rows], { type: 'text/csv' });
@@ -166,11 +170,11 @@ export default function App() {
         a.download = `completed-tasks-${format(startDate, 'MM-dd')}.csv`;
         a.click();
     };
-
+    const tasksByProject = tasks.filter(t => activeProject === 'all' || t.project_id === activeProject);
     const stats = [
-        { label: 'Total Tasks', value: filteredTasks.length, icon: <TaskIcon />, color: '#3498ff' },
-        { label: 'Completed', value: filteredTasks.filter(t => t.status === 'completed').length, icon: <CheckIcon />, color: '#4caf50' },
-        { label: 'Pending', value: filteredTasks.filter(t => t.status === 'pending').length, icon: <TimeIcon />, color: '#ff9800' },
+        { label: 'Total Tasks', value: tasksByProject.length, icon: <TaskIcon />, color: '#3498ff', slug: 'all' },
+        { label: 'Completed', value: tasksByProject.filter(t => t.status === 'completed').length, icon: <CheckIcon />, color: '#4caf50', slug: 'completed' },
+        { label: 'Pending', value: tasksByProject.filter(t => t.status === 'pending').length, icon: <TimeIcon />, color: '#ff9800', slug: 'pending' },
     ];
 
     const [editProjectModal, setEditProjectModal] = useState(false);
@@ -246,7 +250,7 @@ export default function App() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '30px' }}>
                     {stats.map((stat, i) => (
-                        <Panel bordered shaded key={i} style={{ background: '#fff', borderRadius: 12 }}>
+                        <Panel bordered shaded key={i} style={{ background: (slug === stat.slug ? '#f9fffc' : '#fff'), borderRadius: 12,cursor: 'pointer', }} onClick={() => handleStatClick(stat.slug)}>
                             <Stack spacing={20}>
                                 <Avatar size="lg" circle style={{ background: `${stat.color}15`, color: stat.color }}>{stat.icon}</Avatar>
                                 <div>
